@@ -10,12 +10,16 @@
          (fact "encode from hex to base64"
                (hex->base64 in) => out)
 
-
          (fact "back to hex"
-               (base64->hex out) => in))
+               (base64->hex out) => in)))
 
-       )
-(future-facts "on challenge #2")
+(facts "on challenge #2"
+       (let [hex-str-1 "1c0111001f010100061a024b53535009181c"
+             hex-str-2 "686974207468652062756c6c277320657965"
+             out "746865206b696420646f6e277420706c6179"]
+         (fact "xor on hex-str"
+               (xor hex-str-1 hex-str-2) => out)))
+
 (future-facts "on challenge #3")
 (future-facts "on challenge #4")
 (future-facts "on challenge #5")
