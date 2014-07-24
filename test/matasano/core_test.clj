@@ -1,7 +1,13 @@
 (ns matasano.core-test
-  (:require [clojure.test :refer :all]
+  (:require [midje.sweet :refer :all]
             [matasano.core :refer :all]))
 
-(deftest a-test
-  (testing "FIXME, I fail."
-    (is (= 0 1))))
+
+(future-facts "on challenge #1")
+(future-facts "on challenge #2")
+(future-facts "on challenge #3")
+(future-facts "on challenge #4")
+(future-facts "on challenge #5")
+(future-facts "on challenge #6")
+(future-facts "on challenge #7")
+(future-facts "on challenge #8")
