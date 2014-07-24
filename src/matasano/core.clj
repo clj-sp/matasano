@@ -1,5 +1,5 @@
 (ns matasano.core
-  (:require [taoensso.nippy :as nippy]
+  (:require
             [clojure.data.codec.base64 :as b64]
             [clojure.java.io :refer :all])
   (:import org.apache.commons.codec.binary.Base64))
@@ -8,25 +8,40 @@
   (->> hex-string
        (partition 2)
        (map #(Integer/parseInt (apply str %) 16))
-       (into-array Character/TYPE)
-       (map int)))
+       (into-array Byte/TYPE)))
 
-(defn encode-base64 [hex-string]
+
+
+(defn hex->base64 [hex-string]
   (->> hex-string
        hex->byte-array
        b64/encode
        String.))
+(comment
+  (def in "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d")
+  (def out "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t")
+
+   (-> (.getBytes  "A") b64/encode  String.)
+
+  (-> in
+    encode-base64
+      decode-base64
+    )
+  )
 
 (defn number-seq->hex-string [number-seq]
   (->> number-seq
        (map (fn [x] (format "%x" x)))
        (apply str)))
 
-(defn decode-base64 [input]
+(defn base64->hex [input]
   (->> input
        .getBytes
        b64/decode
        number-seq->hex-string))
+
+
+
 
 (defn xor [hex-str-1 hex-str-2]
   (number-seq->hex-string
