@@ -75,5 +75,8 @@
 
 (defn best-xor-in-file [file]
   (key (apply max-key val
-    (into {} (with-open [rdr (reader file)]
-               (doall (map #(score-map %1) (map #(best-xor %1) (line-seq rdr)))))))))
+    (into {}
+          (with-open [rdr (reader file)]
+               (doall (pmap (comp score-map best-xor)
+                            (line-seq rdr))))))))
+

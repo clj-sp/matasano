@@ -31,7 +31,11 @@
                (best-xor message)
                => "Cooking MC's like a pound of bacon")))
 
-(future-facts "on challenge #4")
+(facts "on challenge #4"
+       (fact "finding best xor in file"
+             (best-xor-in-file "resources/challenge04")
+             => "Now that the party is jumping"))
+
 (future-facts "on challenge #5")
 (future-facts "on challenge #6")
 (future-facts "on challenge #7")
