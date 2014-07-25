@@ -17,10 +17,20 @@
        (let [hex-str-1 "1c0111001f010100061a024b53535009181c"
              hex-str-2 "686974207468652062756c6c277320657965"
              out "746865206b696420646f6e277420706c6179"]
+
+         (xor hex-str-1 hex-str-2)
          (fact "xor on hex-str"
                (xor hex-str-1 hex-str-2) => out)))
 
-(future-facts "on challenge #3")
+(facts "on challenge #3"
+       (let [key 162
+             message "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"]
+         (fact "decoding the message"
+               (decode-message 100 message) => irrelevant)
+         (fact "finding best-xor"
+               (best-xor message)
+               => "Cooking MC's like a pound of bacon")))
+
 (future-facts "on challenge #4")
 (future-facts "on challenge #5")
 (future-facts "on challenge #6")
