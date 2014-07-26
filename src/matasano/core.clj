@@ -40,16 +40,13 @@
         (hex->byte-array hex-str-1)
         (hex->byte-array hex-str-2))))
 
-(def special-ascii-codes
-  (-> #{32}
-      (into (range 65 91))
-      (into (range 97 123))))
-
-(defn int-seq [string]
-  (doall (map int (seq string))))
+(def regular-ascii-codes
+  (set (map char (concat [32]
+                         (range 65 91)
+                         (range 97 123)))))
 
 (defn score [string]
-  (count (filter special-ascii-codes (int-seq string))))
+  (count (filter regular-ascii-codes string)))
 
 (defn decode-message [key message]
   (->>
