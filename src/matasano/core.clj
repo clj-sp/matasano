@@ -4,17 +4,20 @@
             [clojure.java.io :refer :all])
   (:import org.apache.commons.codec.binary.Base64))
 
+(defn conversion [x]
+  (if (<= (int x) 127)
+    (byte x)
+    (-> x int (- 255) byte)))
+
 (defn hex->byte-array [hex-string]
   (->> hex-string
        (partition 2)
-       (map #(Integer/parseInt (apply str %) 16))
-       (into-array Character/TYPE)))
+       (map #(conversion (Integer/parseInt (apply str %) 16)))
+       (into-array Byte/TYPE)))
 
 (defn hex->base64 [hex-string]
   (->> hex-string
        hex->byte-array
-       (map byte)
-       (into-array Byte/TYPE)
        b64/encode
        String.))
 
@@ -29,16 +32,11 @@
        b64/decode
        number-seq->hex-string))
 
-(defn conversion [x]
-  (if (<= (int x) 127)
-    (byte x)
-    (-> x int (- 255) byte)))
-
 (defn xor [hex-str-1 hex-str-2]
   (number-seq->hex-string
-   (map #(bit-xor (conversion %1) (conversion %2))
-        (hex->byte-array hex-str-1)
-        (hex->byte-array hex-str-2))))
+    (map bit-xor
+         (hex->byte-array hex-str-1)
+         (hex->byte-array hex-str-2))))
 
 (def regular-ascii-codes
   (set (map char (concat [32]
@@ -50,10 +48,9 @@
 
 (defn decode-message [key message]
   (->>
-   (xor message (apply str (repeat (/ (count message) 2) (format "%x" key))))
-   hex->byte-array
-   (map char)
-   (apply str)))
+    (xor message (apply str (repeat (/ (count message) 2) (format "%x" key))))
+    hex->byte-array
+    String.))
 
 (defn score-pair
   ([str]
