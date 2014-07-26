@@ -62,7 +62,7 @@
   ([str]
    [str (score str)])
   ([key hex-encoded-str]
-   [(decode-message key hex-encoded-str) (score (decode-message key hex-encoded-str))]))
+   (score-pair (decode-message key hex-encoded-str))))
 
 (defn best-xor [hex-encoded-str]
   (key (apply max-key val
