@@ -63,20 +63,27 @@
    (map char)
    (apply str)))
 
-(defn score-map
+(defn score-pair
   ([str]
-    (hash-map str (score str)))
+   [str (score str)])
   ([key hex-encoded-str]
-    (hash-map (decode-message key hex-encoded-str) (score (decode-message key hex-encoded-str)))))
+   [(decode-message key hex-encoded-str) (score (decode-message key hex-encoded-str))]))
 
 (defn best-xor [hex-encoded-str]
   (key (apply max-key val
-    (into {} (map #(score-map %1 hex-encoded-str) (range 256))))))
+    (into {} (map #(score-pair % hex-encoded-str) (range 256))))))
+
+(defn read-lines [file]
+  (clojure.string/split-lines
+    (slurp file)))
+
+(defn calculate-scores [strings]
+  (pmap (comp score-pair best-xor) strings))
 
 (defn best-xor-in-file [file]
-  (key (apply max-key val
-    (into {}
-          (with-open [rdr (reader file)]
-               (doall (pmap (comp score-map best-xor)
-                            (line-seq rdr))))))))
-
+  (->> file
+       read-lines
+       #_(take 10)
+       calculate-scores
+       (apply max-key second)
+       first))
