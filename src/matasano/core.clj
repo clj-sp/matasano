@@ -65,8 +65,8 @@
    (score-pair (decode-message key hex-encoded-str))))
 
 (defn best-xor [hex-encoded-str]
-  (key (apply max-key val
-    (into {} (map #(score-pair % hex-encoded-str) (range 256))))))
+  (first (apply max-key second
+                (map #(score-pair % hex-encoded-str) (range 256)))))
 
 (defn read-lines [file]
   (clojure.string/split-lines
