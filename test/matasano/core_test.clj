@@ -22,8 +22,10 @@
          (fact "xor on hex-str"
                (xor hex-str-1 hex-str-2) => out)))
 
+
+
 (facts "on challenge #3"
-       (let [key 162
+       (let [key (prepare-key (str (char 162)))
              message "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"]
          (fact "decoding the message"
                (decode-message 100 message) => irrelevant)
@@ -36,7 +38,13 @@
              (best-xor-in-file "resources/challenge04")
              => "Now that the party is jumping"))
 
-(future-facts "on challenge #5")
+(facts "on challenge #5 - Repeating-key XOR Cipher"
+       (let [message "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal"
+             key (prepare-key "ICE")]
+         (fact "encoding a message"
+                (encode-message key message)
+                => "0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f")))
+
 (future-facts "on challenge #6")
 (future-facts "on challenge #7")
 (future-facts "on challenge #8")
