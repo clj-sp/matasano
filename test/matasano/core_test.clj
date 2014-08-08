@@ -36,7 +36,7 @@
 (facts "on challenge #4"
        (fact "finding best xor in file"
              (best-xor-in-file "resources/challenge04")
-             => "Now that the party is jumping"))
+             => "Now that the party is jumping\n"))
 
 (facts "on challenge #5 - Repeating-key XOR Cipher"
        (let [message "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal"
