@@ -1,8 +1,7 @@
 (ns matasano.core
   (:require
             [clojure.data.codec.base64 :as b64]
-            [clojure.java.io :refer :all])
-  (:import org.apache.commons.codec.binary.Base64))
+            [clojure.java.io :refer :all]))
 
 (defn to-str [seq]
   (apply str seq))
@@ -15,8 +14,7 @@
 (defn hex-string->byte-seq [hex-string]
   (->> hex-string
        (partition 2)
-       (map #(Integer/parseInt (apply str %) 16))
-       (map char->byte)))
+       (map #(char->byte (Integer/parseInt (apply str %) 16)))))
 
 (defn hex-string->string [hex-string]
   (->> hex-string
