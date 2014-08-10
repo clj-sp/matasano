@@ -57,8 +57,7 @@
   (map char->byte s))
 
 (defn encode-message [key byte-seq]
-  (let [long-key (take (count byte-seq) (cycle key))
-        key-bytes (string->byte-seq long-key)]
+  (let [key-bytes (cycle (string->byte-seq key))]
     (map bit-xor key-bytes byte-seq)))
 
 (defn byte-seq->string [byte-seq]
