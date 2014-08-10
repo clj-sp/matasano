@@ -76,5 +76,5 @@
 (defn best-xor-in-file [file]
   (->> file
        read-lines
-       (map (comp best-xor hex-string->byte-seq))
+       (pmap (comp best-xor hex-string->byte-seq))
        (apply max-key score)))
