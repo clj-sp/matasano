@@ -43,12 +43,12 @@
   (map char (range (int start) (inc (int end)))))
 
 (def regular-ascii-codes
-  (set (concat [\space \']
-               (char-range \A \Z)
-               (char-range \a \z))))
+  (set (map int (concat [\space \']
+                        (char-range \A \Z)
+                        (char-range \a \z)))))
 
-(defn score [string]
-  (count (filter regular-ascii-codes string)))
+(defn score [byte-seq]
+  (count (filter regular-ascii-codes byte-seq)))
 
 (defn string->hex [s]
   (to-str (map (comp byte->hex int) s)))
@@ -65,7 +65,7 @@
 
 (defn best-xor [byte-seq]
   (->> (range 256)
-       (map #(byte-seq->string (encode-message (str (char %)) byte-seq)))
+       (map #(encode-message [%] byte-seq))
        (apply max-key score)))
 
 (defn read-lines [file]

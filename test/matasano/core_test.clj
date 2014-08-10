@@ -32,12 +32,12 @@
          (fact "decoding the message"
                (encode-message "any key" (hex-string->byte-seq message)) => irrelevant)
          (fact "finding best-xor"
-               (best-xor (hex-string->byte-seq "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"))
+               (byte-seq->string (best-xor (hex-string->byte-seq "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736")))
                => "Cooking MC's like a pound of bacon")))
 
 (facts "on challenge #4"
        (fact "finding best xor in file"
-             (best-xor-in-file "resources/challenge04")
+             (byte-seq->string (best-xor-in-file "resources/challenge04"))
              => "Now that the party is jumping\n"))
 
 (facts "on challenge #5 - Repeating-key XOR Cipher"
