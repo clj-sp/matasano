@@ -7,20 +7,20 @@
   (apply str seq))
 
 (defn char->byte [x]
-  (if (<= (int x) 127)
-    (byte x)
-    (-> x int (- 255) byte)))
+  (byte
+    (if (<= (int x) 127)
+      x
+      (- (int x) 255))))
 
 (defn hex-string->byte-seq [hex-string]
   (->> hex-string
        (partition 2)
-       (map #(char->byte (Integer/parseInt (apply str %) 16)))))
+       (map #(char->byte (Integer/parseInt (to-str %) 16)))))
 
 (defn hex-string->string [hex-string]
   (->> hex-string
        hex-string->byte-seq
-       (map char->byte)
-       (map char)
+       (map (comp char char->byte))
        to-str))
 
 (defn hex-string->base64 [hex-string]
