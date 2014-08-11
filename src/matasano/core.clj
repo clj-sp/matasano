@@ -130,7 +130,7 @@
   (second (best-score* s)))
 
 (defn best-score-file [f]
-  (with-open [rdr (io/reader f)]
+  (with-open [rdr (reader f)]
     (->> rdr
          line-seq
          (pmap #(best-score* %))
