@@ -1,6 +1,7 @@
 (ns matasano.core
   (:require
             [clojure.data.codec.base64 :as b64]
+            [clojure.string :as string]
             [clojure.java.io :refer :all]))
 
 (defn to-str [seq]
@@ -47,9 +48,6 @@
                         (char-range \A \Z)
                         (char-range \a \z)))))
 
-(defn score [byte-seq]
-  (count (filter regular-ascii-codes byte-seq)))
-
 (defn string->hex [s]
   (to-str (map (comp byte->hex int) s)))
 
@@ -60,13 +58,65 @@
   (let [key-bytes (cycle (string->byte-seq key))]
     (map bit-xor key-bytes byte-seq)))
 
+
+(def letter-frequencies
+  "From http://www.cl.cam.ac.uk/~mgk25/lee-essays.pdf"
+  {\a 0.0609
+   \b 0.0105
+   \c 0.0284
+   \d 0.0292
+   \e 0.1139
+   \f 0.0179
+   \g 0.0138
+   \h 0.0341
+   \i 0.0544
+   \j 0.0024
+   \k 0.0041
+   \l 0.0292
+   \m 0.0276
+   \n 0.0544
+   \o 0.0600
+   \p 0.0195
+   \q 0.0024
+   \r 0.0495
+   \s 0.0568
+   \t 0.0803
+   \u 0.0243
+   \v 0.0097
+   \w 0.0138
+   \x 0.0024
+   \y 0.0130
+   \z 0.0003
+   \space 0.1217
+   \. 0.0657})
+
+(defn score [s]
+  (if (seq s)
+    (let [freq (-> (byte-seq->string s)
+                   string/lower-case
+                   (string/replace #"[^a-z ]" ".")
+                   frequencies)
+          letters (->> freq
+                       (map second)
+                       (reduce +))
+          scoring (fn [[char quant]]
+                    (Math/abs
+                      (- (or (letter-frequencies char)
+                           0)
+                        (/ quant letters))))]
+      (->> freq
+           (map scoring)
+           (reduce +)))
+    1))
+
+
 (defn byte-seq->string [byte-seq]
   (String. (byte-array byte-seq)))
 
 (defn best-xor [byte-seq]
   (->> (range 256)
        (map #(encode-message [%] byte-seq))
-       (apply max-key score)))
+       (apply min-key score)))
 
 (defn read-lines [file]
   (clojure.string/split-lines
@@ -77,3 +127,56 @@
        read-lines
        (pmap (comp best-xor hex-string->byte-seq))
        (apply max-key score)))
+
+
+(defn count-bits [x]
+  (loop [c 0
+         b x]
+    (if (zero? b) c
+      (recur (+ c (bit-and 1 b))
+             (bit-shift-right b 1)))))
+
+(defn hamming-distance [byte-seq1 byte-seq2]
+  (apply +
+         (map #(count-bits (bit-xor %1 %2)) byte-seq1 byte-seq2)))
+
+(defn average [coll]
+  (/ (reduce + coll)
+     (count coll)))
+
+(defn message-blocks [cipher keysize]
+  (->> cipher
+       (partition keysize)
+       (partition 2 1)))
+
+(defn try-key [cipher keysize]
+  (let [cipher-seq (string->byte-seq cipher)
+        N 20]
+    (->> (message-blocks cipher-seq keysize)
+         (map #(-> (apply hamming-distance %) (/ keysize) float))
+         (take N)
+         average)))
+
+(def cipher
+  (->> (string/replace (slurp "resources/challenge06") "\n" "")
+       (base64->hex)
+       (apply str)
+       (hex-string->byte-seq)))
+
+(defn guess-keysize [cipher min max]
+  (->> (range min (inc max))
+       (apply min-key (partial try-key cipher))))
+
+(defn transpose [m]
+  (apply map vector m))
+
+(defn challenge6 [cipher]
+  (->> cipher
+       (partition (guess-keysize cipher 2 40))
+       transpose
+       (map best-xor)
+       transpose
+       (apply concat)
+       byte-seq->string))
+
+(challenge6 cipher)

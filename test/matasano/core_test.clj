@@ -50,3 +50,7 @@
 (future-facts "on challenge #6")
 (future-facts "on challenge #7")
 (future-facts "on challenge #8")
+#_(hamming-distance
+   (string->byte-seq "this is a test")
+   (string->byte-seq "wokka wokka!!!")
+ )
