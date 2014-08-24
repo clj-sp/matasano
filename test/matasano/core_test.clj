@@ -47,10 +47,18 @@
                (->> message string->byte-seq (encode-message key) byte-seq->string string->hex)
                => "0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f")))
 
-(future-facts "on challenge #6")
+(facts "on challenge #6"
+       (fact "on hamming distance"
+             (hamming-distance (string->byte-seq "this is a test") (string->byte-seq "wokka wokka!!!")) => 37)
+       (fact "on count-bits"
+             (map count-bits [123456 42 1337]) => [6 3 6])
+       (fact "on guess-keysize"
+             (guess-keysize cipher 2 40) => 29)
+       (fact "on challenge6"
+             (let [challenge6 (break-repeating-key-xor cipher)]
+               (count challenge6) => 2871
+               (.startsWith challenge6 "I'm back and I'm ringin' the bell") => true
+               (.contains challenge6 "Supercalafragilisticexpialidocious") => true)))
+
 (future-facts "on challenge #7")
 (future-facts "on challenge #8")
-#_(hamming-distance
-   (string->byte-seq "this is a test")
-   (string->byte-seq "wokka wokka!!!")
- )
