@@ -135,8 +135,7 @@
              (bit-shift-right b 1)))))
 
 (defn hamming-distance [byte-seq1 byte-seq2]
-  (apply +
-         (map #(count-bits (bit-xor %1 %2)) byte-seq1 byte-seq2)))
+  (apply + (map (comp count-bits bit-xor) byte-seq1 byte-seq2)))
 
 (defn average [coll]
   (/ (reduce + coll)
@@ -157,7 +156,7 @@
 
 (def cipher
   (->> (string/replace (slurp "resources/challenge06") "\n" "")
-       (base64->hex)
+       base64->hex
        (apply str)
        (hex-string->byte-seq)))
 
@@ -168,7 +167,7 @@
 (defn transpose [m]
   (apply map vector m))
 
-(defn challenge6 [cipher]
+(defn break-repeating-key-xor [cipher]
   (->> cipher
        (partition (guess-keysize cipher 2 40))
        transpose
@@ -176,5 +175,3 @@
        transpose
        (apply concat)
        byte-seq->string))
-
-(challenge6 cipher)
