@@ -90,6 +90,9 @@
    \space 0.1217
    \. 0.0657})
 
+(defn byte-seq->string [byte-seq]
+  (String. (byte-array byte-seq)))
+
 (defn score [s]
   (if (seq s)
     (let [freq (-> (byte-seq->string s)
@@ -109,10 +112,6 @@
            (reduce +)))
     1))
 
-
-(defn byte-seq->string [byte-seq]
-  (String. (byte-array byte-seq)))
-
 (defn best-xor [byte-seq]
   (->> (range 256)
        (map #(encode-message [%] byte-seq))
@@ -126,8 +125,7 @@
   (->> file
        read-lines
        (pmap (comp best-xor hex-string->byte-seq))
-       (apply max-key score)))
-
+       (apply min-key score)))
 
 (defn count-bits [x]
   (loop [c 0
