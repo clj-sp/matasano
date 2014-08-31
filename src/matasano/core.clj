@@ -127,15 +127,8 @@
        (pmap (comp best-xor hex-string->byte-seq))
        (apply min-key score)))
 
-(defn count-bits [x]
-  (loop [c 0
-         b x]
-    (if (zero? b) c
-      (recur (+ c (bit-and 1 b))
-             (bit-shift-right b 1)))))
-
 (defn hamming-distance [byte-seq1 byte-seq2]
-  (apply + (map (comp count-bits bit-xor) byte-seq1 byte-seq2)))
+  (apply + (map #(Integer/bitCount (bit-xor %1 %2)) byte-seq1 byte-seq2)))
 
 (defn average [coll]
   (/ (reduce + coll)

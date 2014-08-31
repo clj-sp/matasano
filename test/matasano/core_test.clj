@@ -50,8 +50,6 @@
 (facts "on challenge #6"
        (fact "on hamming distance"
              (hamming-distance (string->byte-seq "this is a test") (string->byte-seq "wokka wokka!!!")) => 37)
-       (fact "on count-bits"
-             (map count-bits [123456 42 1337]) => [6 3 6])
        (fact "on guess-keysize"
              (guess-keysize cipher 2 40) => 29)
        (fact "on challenge6"
