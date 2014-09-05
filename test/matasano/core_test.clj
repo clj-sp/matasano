@@ -97,14 +97,19 @@
 (expect "0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
   (repeating-key-xor "ICE" "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal"))
 
-
 ;; Challenge 6
-(expect 37 (hamming-distance (string->byte-seq "this is a test")
-                             (string->byte-seq "wokka wokka!!!")))
-(expect 29
-        (guess-keysize cipher 2 40))
+(expect 37 (hamming-distance (str->bytes "this is a test")
+                             (str->bytes "wokka wokka!!!")))
 
-(let [challenge6 (break-repeating-key-xor cipher)]
-  (expect 2871 (count challenge6))
-  (expect true (.startsWith challenge6 "I'm back and I'm ringin' the bell"))
-  (expect true (.contains challenge6 "Supercalafragilisticexpialidocious")))
+(let [encrypted (->>
+                  (read-lines "resources/challenge06")
+                  (apply str)
+                  b64->bytes)]
+
+  (expect 29
+          (guess-keysize encrypted 2 40))
+
+  (let [decrypted (break-repeating-key-xor encrypted)]
+    (expect 2871 (count decrypted))
+    (expect true (.startsWith decrypted "I'm back and I'm ringin' the bell"))
+    (expect true (.contains decrypted "Supercalafragilisticexpialidocious"))))

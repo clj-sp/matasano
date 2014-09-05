@@ -111,13 +111,51 @@
            (reduce +)))
     1))
 
+(defn count-bits [x]
+  (loop [c 0
+         b x]
+    (if (zero? b) c
+      (recur (+ c (bit-and 1 b))
+             (bit-shift-right b 1)))))
+
+(defn hamming-distance [byte-seq1 byte-seq2]
+  (apply +
+         (map #(count-bits (bit-xor %1 %2)) byte-seq1 byte-seq2)))
+
 (defn decode [k msg]
   (xor msg (cycle k)))
+
+(defn average [coll]
+  (/ (reduce + coll)
+     (count coll)))
+
+(defn message-blocks [cipher keysize]
+  (->> cipher
+       (partition keysize)
+       (partition 2 1)))
+
+(defn try-key [cipher keysize]
+  (let [N 20]
+    (->> (message-blocks cipher keysize)
+         (map #(-> (apply hamming-distance %) (/ keysize) float))
+         (take N)
+         average)))
+
+(defn read-lines [file]
+  (clojure.string/split-lines
+    (slurp file)))
+
+(defn guess-keysize [cipher min max]
+  (->> (range min (inc max))
+       (apply min-key (partial try-key cipher))))
+
+(defn transpose [m]
+  (apply map vector m))
 
 (def encode decode)
 
 (defn decode-message [k message]
-  (->> (decode [k] (hex->bytes message))
+  (->> (decode [k] message)
        bytes->str))
 
 (defn all-decode-tries [s]
@@ -131,6 +169,15 @@
 
 (defn best-score [s]
   (second (best-score* s)))
+
+(defn break-repeating-key-xor [cipher]
+  (->> cipher
+       (partition (guess-keysize cipher 2 40))
+       transpose
+       (map best-score)
+       transpose
+       (apply concat)
+       (apply str)))
 
 (defn best-score-file [f]
   (with-open [rdr (reader f)]
@@ -159,10 +206,6 @@
     (encrypt-aes (str->bytes "YELLOW SUBMARINE"))
     (decrypt-aes (str->bytes "YELLOW SUBMARINE"))
     bytes->str)
-(defn read-lines [file]
-  (clojure.string/split-lines
-    (slurp file)))
-
 (->
   (apply str (read-lines "resources/challenge07"))
   b64->bytes
