@@ -183,6 +183,7 @@
   (with-open [rdr (reader f)]
     (->> rdr
          line-seq
+         (map hex->bytes)
          (pmap #(best-score* %))
          (apply min-key first)
          second)))
