@@ -1,4 +1,7 @@
 (ns matasano.core
+  (:import [javax.crypto Cipher]
+           [javax.crypto SecretKey]
+           [javax.crypto.spec SecretKeySpec IvParameterSpec])
   (:require [clojure.string :as str]
             [clojure.data.codec.base64 :as b64]
             [clojure.java.io :refer :all]))
@@ -140,3 +143,29 @@
 (defn repeating-key-xor [k msg]
   (bytes->hex
     (decode (str->bytes k) (str->bytes msg))))
+
+(defn aes [mode message key]
+  (let [cipher (Cipher/getInstance "AES/ECB/NoPadding")
+        key (SecretKeySpec. key "AES")]
+    (.init cipher mode key)
+    (-> cipher
+        (.doFinal message))))
+
+(def encrypt-aes (partial aes Cipher/ENCRYPT_MODE))
+(def decrypt-aes (partial aes Cipher/DECRYPT_MODE))
+
+(-> "1872763=={}{}{:1"
+    str->bytes
+    (encrypt-aes (str->bytes "YELLOW SUBMARINE"))
+    (decrypt-aes (str->bytes "YELLOW SUBMARINE"))
+    bytes->str)
+(defn read-lines [file]
+  (clojure.string/split-lines
+    (slurp file)))
+
+(->
+  (apply str (read-lines "resources/challenge07"))
+  b64->bytes
+  (decrypt-aes (str->bytes "YELLOW SUBMARINE"))
+ bytes->str
+ )
