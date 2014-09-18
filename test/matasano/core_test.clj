@@ -1,5 +1,6 @@
 (ns matasano.core-test
   (:require [midje.sweet :refer :all]
+            [clojure.string :as string]
             [matasano.core :refer :all]))
 
 (facts "on helper functions"
@@ -48,15 +49,25 @@
                => "0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f")))
 
 (facts "on challenge #6"
-       (fact "on hamming distance"
-             (hamming-distance (string->byte-seq "this is a test") (string->byte-seq "wokka wokka!!!")) => 37)
-       (fact "on guess-keysize"
-             (guess-keysize cipher 2 40) => 29)
-       (fact "on challenge6"
-             (let [challenge6 (break-repeating-key-xor cipher)]
-               (count challenge6) => 2871
-               (.startsWith challenge6 "I'm back and I'm ringin' the bell") => true
-               (.contains challenge6 "Supercalafragilisticexpialidocious") => true)))
+       (let [cipher (->> (string/replace (slurp "resources/challenge06") "\n" "")
+                         base64->hex
+                         (apply str)
+                         (hex-string->byte-seq))]
+         (fact "on hamming distance"
+               (hamming-distance (string->byte-seq "this is a test") (string->byte-seq "wokka wokka!!!")) => 37)
+         (fact "on guess-keysize"
+               (guess-keysize cipher 2 40) => 29)
+         (fact "on challenge6"
+               (let [challenge6 (break-repeating-key-xor cipher)]
+                 (count challenge6) => 2871
+                 (.startsWith challenge6 "I'm back and I'm ringin' the bell") => true
+                 (.contains challenge6 "Supercalafragilisticexpialidocious") => true))))
 
-(future-facts "on challenge #7")
+(facts "on challenge #7"
+       (-> (apply str (read-lines "resources/challenge07"))
+           b64->bytes
+           (decrypt-aes (str->bytes "YELLOW SUBMARINE"))
+           bytes->str)
+       => #"^I'm back")
+
 (future-facts "on challenge #8")

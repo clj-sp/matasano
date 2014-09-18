@@ -1,6 +1,8 @@
 (ns matasano.core
-  (:require
-            [clojure.data.codec.base64 :as b64]
+  (:import [javax.crypto Cipher]
+           [javax.crypto SecretKey]
+           [javax.crypto.spec SecretKeySpec IvParameterSpec])
+  (:require [clojure.data.codec.base64 :as b64]
             [clojure.string :as string]
             [clojure.java.io :refer :all]))
 
@@ -147,12 +149,6 @@
          (take N)
          average)))
 
-(def cipher
-  (->> (string/replace (slurp "resources/challenge06") "\n" "")
-       base64->hex
-       (apply str)
-       (hex-string->byte-seq)))
-
 (defn guess-keysize [cipher min max]
   (->> (range min (inc max))
        (apply min-key (partial try-key cipher))))
@@ -168,3 +164,30 @@
        transpose
        (apply concat)
        byte-seq->string))
+
+(defn aes [mode message key]
+  (let [cipher (Cipher/getInstance "AES/ECB/NoPadding")
+        key (SecretKeySpec. key "AES")]
+    (.init cipher mode key)
+    (-> cipher
+        (.doFinal message))))
+
+(def encrypt-aes (partial aes Cipher/ENCRYPT_MODE))
+(def decrypt-aes (partial aes Cipher/DECRYPT_MODE))
+
+;; From Marcelo's Branch
+
+(defn bytes->str [b]
+  (-> b
+      byte-array
+      String.))
+
+(defn str->bytes [s]
+  (-> s
+      .getBytes
+      byte-array))
+
+(defn b64->bytes [b64]
+  (-> b64
+      .getBytes
+      b64/decode))
