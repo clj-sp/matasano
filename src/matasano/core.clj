@@ -191,3 +191,31 @@
   (-> b64
       .getBytes
       b64/decode))
+
+(defn hex->bytes [hex]
+  (->> hex
+       (re-seq #".{2}")
+       (map #(Integer/parseInt % 16))
+       byte-array))
+
+(defn bytes->hex [b]
+  (->> b
+       byte-array
+       (map #(format "%02x" %))
+       (apply str)))
+
+
+(defn distinct-blocks? [blocks]
+  (->> blocks
+       (map vec)
+       (apply distinct?)))
+
+(defn unique? [b-array block-size]
+  (->> b-array
+      (partition block-size)
+      distinct-blocks?))
+
+
+
+
+

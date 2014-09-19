@@ -70,4 +70,16 @@
            bytes->str)
        => #"^I'm back")
 
-(future-facts "on challenge #8")
+(facts "on challenge #8"
+       (fact "on distinct_blocks?"
+         (distinct-blocks? [[1] [1]]) => false
+         (distinct-blocks? [[1] [2]]) => true)
+
+       (fact "on unique?"
+         (unique? [1 1] 1) => false
+         (unique? [1 2] 1) => true)
+
+       (->> (read-lines "resources/challenge08")
+            (map hex->bytes)
+            (remove #(unique? % 16))
+            count) => 1)
