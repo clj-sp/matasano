@@ -215,7 +215,12 @@
       (partition block-size)
       distinct-blocks?))
 
+(defn padding-pkcs7 [block-size k]
+  (let [k-seq (seq k)
+        padding-size (- block-size (rem (count k-seq) block-size))
+        padding-bytes (repeat padding-size padding-size)]
 
+  (byte-array (concat k-seq padding-bytes))))
 
 
 

@@ -83,3 +83,19 @@
             (map hex->bytes)
             (remove #(unique? % 16))
             count) => 1)
+
+
+(facts "on challenge #9"
+       (fact "on padding-pkcs7"
+             (->> [42]
+                  (padding-pkcs7 2)
+                  (map int)) => [42 1])
+             (->> [42 42]
+                  (padding-pkcs7 2)
+                  (map int)) => [42 42 2 2]
+
+       (->> "YELLOW SUBMARINE"
+            .getBytes
+            (padding-pkcs7 20)
+            (map char)
+            (apply str)) => "YELLOW SUBMARINE\x04\x04\x04\x04")
