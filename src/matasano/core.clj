@@ -222,5 +222,24 @@
 
   (byte-array (concat k-seq padding-bytes))))
 
+(def initialization-vector (byte-array 1234 (repeat 0)))
 
+(defn cbc [byte-arr1 byte-arr2 key]
+  (byte-array (map bit-xor byte-arr1 (encrypt-aes byte-arr2 key))))
 
+(defn encrypt-cbc [message-blocks key initialization-vector]
+  (let [cbc (fn [byte-arr1 byte-arr2]
+               (byte-array
+                (map bit-xor byte-arr1
+                     (encrypt-aes byte-arr2 key))))]
+    (reduce cbc initialization-vector message-blocks)))
+
+(def my-key (byte-array (repeat 16 (byte \B))))
+
+(let [message-blocks (->> (read-lines "resources/challenge10")
+                          string/join
+                          b64->bytes
+                          (partition 32)
+                          (map byte-array))]
+  (apply str
+  (encrypt-cbc message-blocks my-key initialization-vector)))
