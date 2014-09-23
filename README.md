@@ -1,14 +1,8 @@
-# matasano
+## crypto dojo
 
-A Clojure library designed to ... well, that part is up to you.
+Repositório do grupo de clojure de São Paulo (clj-sp). Mais informações em http://www.meetup.com/clj-sp/
 
-## Usage
 
-FIXME
+## Enunciados
 
-## License
-
-Copyright © 2014 FIXME
-
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+http://cryptopals.com/

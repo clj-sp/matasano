@@ -201,15 +201,3 @@
 
 (def encrypt-aes (partial aes Cipher/ENCRYPT_MODE))
 (def decrypt-aes (partial aes Cipher/DECRYPT_MODE))
-
-(-> "1872763=={}{}{:1"
-    str->bytes
-    (encrypt-aes (str->bytes "YELLOW SUBMARINE"))
-    (decrypt-aes (str->bytes "YELLOW SUBMARINE"))
-    bytes->str)
-(->
-  (apply str (read-lines "resources/challenge07"))
-  b64->bytes
-  (decrypt-aes (str->bytes "YELLOW SUBMARINE"))
- bytes->str
- )
