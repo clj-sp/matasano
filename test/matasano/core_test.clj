@@ -113,3 +113,10 @@
     (expect 2871 (count decrypted))
     (expect true (.startsWith decrypted "I'm back and I'm ringin' the bell"))
     (expect true (.contains decrypted "Supercalafragilisticexpialidocious"))))
+
+;; Challenge 7
+(expect #"^I'm back"
+        (-> (apply str (read-lines "resources/challenge07"))
+           b64->bytes
+           (decrypt-aes (str->bytes "YELLOW SUBMARINE"))
+           bytes->str))
