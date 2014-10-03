@@ -249,3 +249,28 @@
                           (decrypt-block-cbc key previous-block block))
                         (cons iv blocks) blocks))))
 
+(defn gen-random-bytes [len]
+  (byte-array (repeatedly 16 #(char->byte (rand-int 256)))))
+
+(defn rand-encrypt [data]
+  (let [key (gen-random-bytes 16)
+        iv (gen-random-bytes 16)
+        encrypt-fn (rand-nth [#(encrypt-cbc %1 %2 iv) encrypt-aes])
+        pref (gen-random-bytes (+ 5 (rand-int 6)))
+        suff (gen-random-bytes (+ 5 (rand-int 6)))
+        new-data (padding-pkcs7 16 (byte-array (concat pref data suff)))]
+    (println encrypt-fn)
+    (encrypt-fn new-data key)))
+
+(defn ebc-block-cipher-mode? []
+  (unique? (rand-encrypt (byte-array (repeat 80 65))) 16))
+
+(defn encryption-oracle [encryption-fn]
+  (let [fixed-input (byte-array (repeat 80 65))
+        output (encryption-fn fixed-input)]
+    (if (unique? output 16)
+      "CBC"
+      "EBC")))
+
+;(encryption-oracle #(encrypt-aes % (gen-random-bytes 16)))
+;(encryption-oracle #(encrypt-cbc % (gen-random-bytes 16) iv))

@@ -100,8 +100,12 @@
             (apply str)) => "YELLOW SUBMARINE\x04\x04\x04\x04")
 
 
-
-
+(facts "on challenge #10"
+       (let [iv (byte-array (repeat block-size 0))]
+       (-> (apply str (read-lines "resources/challenge10"))
+           b64->bytes
+           (decrypt-cbc (str->bytes "YELLOW SUBMARINE") iv)
+           bytes->str) => #"^I'm back"))
 
 
 
