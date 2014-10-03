@@ -6,6 +6,10 @@
             [clojure.string :as string]
             [clojure.java.io :refer :all]))
 
+
+(defn array-xor [a1 a2]
+  (byte-array (map bit-xor a1 a2)))
+
 (defn to-str [seq]
   (apply str seq))
 
@@ -222,24 +226,26 @@
 
   (byte-array (concat k-seq padding-bytes))))
 
-(def initialization-vector (byte-array 1234 (repeat 0)))
+(defn encrypt-block-cbc [key previous-block block]
+  (encrypt-aes (array-xor block previous-block) key))
 
-(defn cbc [byte-arr1 byte-arr2 key]
-  (byte-array (map bit-xor byte-arr1 (encrypt-aes byte-arr2 key))))
+(defn decrypt-block-cbc [key previous-block block]
+  (array-xor (decrypt-aes block key) previous-block))
 
-(defn encrypt-cbc [message-blocks key initialization-vector]
-  (let [cbc (fn [byte-arr1 byte-arr2]
-               (byte-array
-                (map bit-xor byte-arr1
-                     (encrypt-aes byte-arr2 key))))]
-    (reduce cbc initialization-vector message-blocks)))
+(def block-size 16)
 
-(def my-key (byte-array (repeat 16 (byte \B))))
+(defn encrypt-cbc [data key iv]
+  (->> data
+       (partition block-size)
+       (map byte-array)
+       (reductions (partial encrypt-block-cbc key) iv)
+       rest
+       (apply concat)
+       byte-array))
 
-(let [message-blocks (->> (read-lines "resources/challenge10")
-                          string/join
-                          b64->bytes
-                          (partition 32)
-                          (map byte-array))]
-  (apply str
-  (encrypt-cbc message-blocks my-key initialization-vector)))
+(defn decrypt-cbc [data key iv]
+  (let [blocks (map byte-array (partition block-size data))]
+    (byte-array (mapcat (fn [previous-block block]
+                          (decrypt-block-cbc key previous-block block))
+                        (cons iv blocks) blocks))))
+

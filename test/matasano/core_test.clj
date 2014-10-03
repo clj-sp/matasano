@@ -84,7 +84,6 @@
             (remove #(unique? % 16))
             count) => 1)
 
-
 (facts "on challenge #9"
        (fact "on padding-pkcs7"
              (->> [42]
@@ -99,3 +98,15 @@
             (padding-pkcs7 20)
             (map char)
             (apply str)) => "YELLOW SUBMARINE\x04\x04\x04\x04")
+
+
+
+
+
+
+
+
+
+
+
+
