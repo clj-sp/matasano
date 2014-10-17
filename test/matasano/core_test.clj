@@ -107,10 +107,14 @@
            (decrypt-cbc (str->bytes "YELLOW SUBMARINE") iv)
            bytes->str) => #"^I'm back"))
 
+(facts "on challenge #11"
+       (fact "deterministic"
+             (encryption-oracle #(encrypt-aes % (gen-random-bytes 16))) => "EBC"
+             (encryption-oracle #(encrypt-cbc % (gen-random-bytes 16) iv)) => "CBC")
 
+       (fact "mocking randomness"
+             (encryption-oracle rand-encrypt) => "EBC"
+             (provided (rand-nth anything) => encrypt-aes)
 
-
-
-
-
-
+             (encryption-oracle rand-encrypt) => "CBC"
+             (provided (rand-nth anything) => #(encrypt-cbc %1 %2 (gen-random-bytes 16)))))

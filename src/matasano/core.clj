@@ -208,7 +208,6 @@
        (map #(format "%02x" %))
        (apply str)))
 
-
 (defn distinct-blocks? [blocks]
   (->> blocks
        (map vec)
@@ -250,7 +249,7 @@
                         (cons iv blocks) blocks))))
 
 (defn gen-random-bytes [len]
-  (byte-array (repeatedly 16 #(char->byte (rand-int 256)))))
+  (byte-array (repeatedly len #(char->byte (rand-int 256)))))
 
 (defn rand-encrypt [data]
   (let [key (gen-random-bytes 16)
@@ -259,7 +258,6 @@
         pref (gen-random-bytes (+ 5 (rand-int 6)))
         suff (gen-random-bytes (+ 5 (rand-int 6)))
         new-data (padding-pkcs7 16 (byte-array (concat pref data suff)))]
-    (println encrypt-fn)
     (encrypt-fn new-data key)))
 
 (defn ebc-block-cipher-mode? []
@@ -271,6 +269,70 @@
     (if (unique? output 16)
       "CBC"
       "EBC")))
+
+
+(defn encryption-oracle2 [block-size encryption-fn]
+  (let [fixed-input (byte-array (repeat (* 2 block-size) (int \A)))
+        output (encryption-fn fixed-input)]
+    (if (unique? output block-size)
+      "CBC"
+      "ECB")))
+
+(defn f [block-size message encrypt-fn]
+  )
+
+;; AAAA AAAV
+;; AAAA AAVA
+;; AAAA AVAC
+;; AAAA VACA
+;; AAAV ACAA
+;; AAVA CAAM
+;; AVAC AAMA
+;; VACA AMAR ELLA
+
+;; AAAO
+;; AAOI
+
+;;  0. Seja B o tamanho do Bloco
+;;  0. Seja S o tamanho do Salt (padded)
+;;  0. Seja SA os caracteres do salt que conhecemos
+;;  0. Seja ME a mensagem a cada passo
+;;  1. Pegue o tamanho do bloco (max B S) (sendo multiplo de B)
+;;  2. Faça ME (repeat tamanho-acima A)
+;;  3. Troque os ultimos caracteres de ME pelo Salt conhecido
+;;  4. REST de ME, para remover o primeiro caracter
+;;  5. Encrypt de ME
+;;  6. Para n de 0 a 255, (encrypt (conj (repeat (- tamanho-maximo (count SA)) (int \A)) n))
+;;     a. Caso (= ME-encryptado ME-acima-encryptado) -> SA .= n
+
+(def random-ecb-key (.getBytes "YELLOW SUBMARINE"))
+
+(def suffix-bytes
+  (b64->bytes "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK"))
+
+(count suffix-bytes)
+
+(defn encrypt-with-key [message]
+  (encrypt-aes (padding-pkcs7 16 (byte-array (concat message suffix-bytes))) random-ecb-key))
+
+(defn find-block-size [fn]
+  (let [max-block-size 1000]
+    (->> (range 16 max-block-size)
+         (filter #(= "ECB" (encryption-oracle2 % fn)))
+         first)))
+
+(find-block-size encrypt-with-key)
+
+(count (encrypt-cbc (gen-random-bytes 17) random-ecb-key (gen-random-bytes 16)))
+
+(find-block-size #(encrypt-cbc % random-ecb-key (gen-random-bytes 16)))
+
+
+(count (encrypt-with-key (.getBytes "")))
+
+; A{15}X A{15} [content][salt]
+;              [   prefix    ]
+
 
 ;(encryption-oracle #(encrypt-aes % (gen-random-bytes 16)))
 ;(encryption-oracle #(encrypt-cbc % (gen-random-bytes 16) iv))
