@@ -266,7 +266,7 @@
 (defn encryption-oracle [encryption-fn]
   (let [fixed-input (byte-array (repeat 80 65))
         output (encryption-fn fixed-input)]
-    (if (unique? output 16)
+    (if (unique? output block-size)
       "CBC"
       "EBC")))
 
@@ -327,12 +327,55 @@
 
 (find-block-size #(encrypt-cbc % random-ecb-key (gen-random-bytes 16)))
 
+(def salt-size (count (encrypt-with-key (.getBytes ""))))
 
-(count (encrypt-with-key (.getBytes "")))
+(def guessed-size (+ salt-size (rem salt-size block-size)))
+
+(count (byte-seq->string suffix-bytes))
+
+(defmacro let-dbg
+  "Versão do Mauro Lopes <maurolopes@gmail.com>"
+  [bindings & body]
+  `(do ~@(map #(cons 'def %)
+              (partition 2 bindings))
+       ~@body))
+
+(def remove-padding
+  ([seq] (remove-padding 1 seq))
+
+  )
+
+;(comment
+(def x
+(loop [message (byte-array (repeat guessed-size (int \A)))
+       guessed-salt []]
+  (let [probe-message (rest message)
+        cipher (->> (encrypt-with-key probe-message)
+                    (take guessed-size))
+        cipher-list (->> (range 0 256)
+                         (map #(vector % (-> (vec probe-message)
+                                             (concat guessed-salt)
+                                             vec
+                                             (conj %)
+                                             byte-array
+                                             encrypt-with-key
+                                             (->> (take guessed-size))))))
+        [found _] (->> cipher-list
+                       (filter (fn [[c cipher-candidate]]
+                              (= cipher-candidate cipher)))
+                       first)]
+    (if-not found (remove-padding (byte-array guessed-salt))
+      (recur (byte-array probe-message)
+             (conj guessed-salt found))))))
+
+(= (butlast (seq x)) (seq suffix-bytes))
+(seq suffix-bytes)
+(seq x)
 
 ; A{15}X A{15} [content][salt]
 ;              [   prefix    ]
 
-
+(count (concat probe-message guessed-salt))
+(nth cipher-list 82)
 ;(encryption-oracle #(encrypt-aes % (gen-random-bytes 16)))
 ;(encryption-oracle #(encrypt-cbc % (gen-random-bytes 16) iv))
