@@ -129,7 +129,7 @@
 
 (defn best-xor-in-file [file]
   (->> file
-       read-lines
+       (read-lines)
        (pmap (comp best-xor hex-string->byte-seq))
        (apply min-key score)))
 
@@ -195,6 +195,18 @@
   (-> b64
       .getBytes
       b64/decode))
+
+
+
+
+
+
+
+
+
+
+
+
 
 (defn hex->bytes [hex]
   (->> hex
@@ -310,6 +322,8 @@
 (def suffix-bytes
   (b64->bytes "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK"))
 
+#_(def suffix-bytes (b64->bytes "QUE="))
+
 (count suffix-bytes)
 
 (defn encrypt-with-key [message]
@@ -340,33 +354,94 @@
               (partition 2 bindings))
        ~@body))
 
-(def remove-padding
+#_(def remove-padding
   ([seq] (remove-padding 1 seq))
 
   )
 
-;(comment
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(defn remove-padding [s]
+  (seq s) #_  (drop-last (last s) s))
+
 (def x
-(loop [message (byte-array (repeat guessed-size (int \A)))
-       guessed-salt []]
-  (let [probe-message (rest message)
-        cipher (->> (encrypt-with-key probe-message)
-                    (take guessed-size))
-        cipher-list (->> (range 0 256)
-                         (map #(vector % (-> (vec probe-message)
-                                             (concat guessed-salt)
-                                             vec
-                                             (conj %)
-                                             byte-array
-                                             encrypt-with-key
-                                             (->> (take guessed-size))))))
-        [found _] (->> cipher-list
-                       (filter (fn [[c cipher-candidate]]
-                              (= cipher-candidate cipher)))
-                       first)]
-    (if-not found (remove-padding (byte-array guessed-salt))
-      (recur (byte-array probe-message)
-             (conj guessed-salt found))))))
+  (loop [message (byte-array (repeat guessed-size (int \A)))
+         guessed-salt []]
+    (let [probe-message (rest message)
+          cipher (->> (encrypt-with-key probe-message)
+                      (take guessed-size))
+          cipher-list (->> (range 0 256)
+                           (map #(vector % (-> (vec probe-message)
+                                               (concat guessed-salt)
+                                               vec
+                                               (conj %)
+                                               byte-array
+                                               encrypt-with-key
+                                               (->> (take guessed-size))))))
+          [found _] (->> cipher-list
+                         (filter (fn [[c cipher-candidate]]
+                                   (= cipher-candidate cipher)))
+                         first)]
+
+
+      (if-not found (butlast (byte-array guessed-salt))
+                    (recur (byte-array probe-message)
+                           (conj guessed-salt found))))))
+
+
+(defn parse-query-string [s]
+  (->> (string/split s #"&")
+       (map #(->> (string/split % #"=")
+                  (apply  hash-map)))
+       (apply merge)))
+
+(defn parse-query-string2 [s]
+  (->> (string/split s #"&")
+       (mapcat #(string/split % #"="))
+       (apply hash-map)))
+
+(defn profile-for [email]
+  {:email (string/replace email #"[&=]" "")
+   :uid 10
+   :role "user"})
+
+(defn to-query-string [x]
+  (->> (map (fn [[k v]] (str (name k) "=" v)) x)
+       (interpose "&")
+       (apply str))
+  )
+
+(->> (profile-for "asdasd@kskks&&&&&&&&.com=====")
+     to-query-string)
+
+
+
+(parse-query-string "foo=bar&baz=qux&zap=zazzle")
+
+(comment
+
+
 
 (= (butlast (seq x)) (seq suffix-bytes))
 (seq suffix-bytes)
@@ -379,3 +454,4 @@
 (nth cipher-list 82)
 ;(encryption-oracle #(encrypt-aes % (gen-random-bytes 16)))
 ;(encryption-oracle #(encrypt-cbc % (gen-random-bytes 16) iv))
+)
