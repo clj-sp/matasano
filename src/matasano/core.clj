@@ -71,16 +71,6 @@
 (def decrypt-aes (partial aes Cipher/DECRYPT_MODE))
 
 
-(defn distinct-blocks? [blocks]
-  (->> blocks
-       (map vec)
-       (apply distinct?)))
-
-
-(defn unique? [b-array block-size]
-  (->> b-array
-      (partition block-size)
-      distinct-blocks?))
 
 (defn find-first-duplicated [b-array block-size]
   (let [num-blocks (/ (count b-array) block-size)]
@@ -96,12 +86,6 @@
 (find-first-duplicated (.getBytes "12349999aabaaaaa5678") 4)
 
 
-(defn padding-pkcs7 [block-size k]
-  (let [k-seq (seq k)
-        padding-size (- block-size (rem (count k-seq) block-size))
-        padding-bytes (repeat padding-size padding-size)]
-
-  (byte-array (concat k-seq padding-bytes))))
 
 (defn encrypt-block-cbc [key previous-block block]
   (encrypt-aes (a/array-xor block previous-block) key))

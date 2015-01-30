@@ -73,7 +73,7 @@
            a/bytes->str)
        => #"^I'm back")
 
-#_(facts "on challenge #8"
+(facts "on challenge #8"
        (fact "on distinct_blocks?"
          (distinct-blocks? [[1] [1]]) => false
          (distinct-blocks? [[1] [2]]) => true)
@@ -83,34 +83,36 @@
          (unique? [1 2] 1) => true)
 
        (->> (read-lines "resources/challenge08")
-            (map hex->bytes)
+            (map a/hex->bytes)
             (remove #(unique? % 16))
             count) => 1)
 
 
-#_(facts "on challenge #9"
+(facts "on challenge #9"
        (fact "on padding-pkcs7"
              (->> [42]
                   (padding-pkcs7 2)
-                  (map int)) => [42 1])
+                  (map int)) => [42 1]
              (->> [42 42]
                   (padding-pkcs7 2)
                   (map int)) => [42 42 2 2]
 
-;;        (->> "YELLOW SUBMARINE"
-;;             .getBytes
-;;             (padding-pkcs7 20)
-;;             (map char)
-;;             (apply str)) => "YELLOW SUBMARINE\\x04\\x04\\x04\\x04"
-       )
+
+;;           (->> "YELLOW SUBMARINE"
+;;              .getBytes
+;;              (padding-pkcs7 20)
+;;              (map char)
+;;              (apply str)) => (str "YELLOW SUBMARINE\x04\x04\x04\x04")
+            ))
 
 
-#_(facts "on challenge #10"
+
+(facts "on challenge #10"
        (let [iv (byte-array (repeat block-size 0))]
        (-> (apply str (read-lines "resources/challenge10"))
-           b64->bytes
-           (decrypt-cbc (str->bytes "YELLOW SUBMARINE") iv)
-           bytes->str) => #"^I'm back"))
+           a/b64->bytes
+           (decrypt-cbc (a/str->bytes "YELLOW SUBMARINE") iv)
+           a/bytes->str) => #"^I'm back"))
 
 #_(facts "on challenge #11"
        (let [iv (byte-array (repeat block-size 0))]
