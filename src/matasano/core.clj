@@ -4,6 +4,7 @@
            [javax.crypto.spec SecretKeySpec IvParameterSpec])
   (:require [clojure.data.codec.base64 :as b64]
             [matasano.adapters :as a]
+            [matasano.utils :refer :all]
             [matasano.scores :as s]
             [clojure.string :as string]
             [clojure.java.io :refer :all]))
@@ -16,15 +17,6 @@
                         (char-range \A \Z)
                         (char-range \a \z)))))
 
-
-
-
-(defn byte-seq->string [byte-seq]
-  (String. (byte-array byte-seq)))
-
-(defn read-lines [file]
-  (clojure.string/split-lines
-    (slurp file)))
 
 (defn best-xor-in-file [file]
   (->> file
@@ -66,7 +58,7 @@
        (map s/best-xor)
        transpose
        (apply concat)
-       byte-seq->string))
+       a/byte-seq->string))
 
 (defn aes [mode message key]
   (let [cipher (Cipher/getInstance "AES/ECB/NoPadding")
@@ -78,46 +70,6 @@
 (def encrypt-aes (partial aes Cipher/ENCRYPT_MODE))
 (def decrypt-aes (partial aes Cipher/DECRYPT_MODE))
 
-;; From Marcelo's Branch
-
-(defn bytes->str [b]
-  (-> b
-      byte-array
-      String.))
-
-(defn str->bytes [s]
-  (-> s
-      .getBytes
-      byte-array))
-
-(defn b64->bytes [b64]
-  (-> b64
-      .getBytes
-      b64/decode))
-
-
-
-
-
-
-
-
-
-
-
-
-
-(defn hex->bytes [hex]
-  (->> hex
-       (re-seq #".{2}")
-       (map #(Integer/parseInt % 16))
-       byte-array))
-
-(defn bytes->hex [b]
-  (->> b
-       byte-array
-       (map #(format "%02x" %))
-       (apply str)))
 
 (defn distinct-blocks? [blocks]
   (->> blocks
@@ -212,9 +164,9 @@
 (def random-ecb-key (.getBytes "YELLOW SUBMARINE"))
 
 (def suffix-bytes
-  (b64->bytes "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK"))
+  (a/b64->bytes "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK"))
 
-#_(def suffix-bytes (b64->bytes "QUE="))
+#_(def suffix-bytes (a/b64->bytes "QUE="))
 
 (count suffix-bytes)
 
@@ -264,9 +216,9 @@
                            (conj guessed-salt found))))))
   )
 
-(byte-seq->string (crack encrypt-with-key))
+(a/byte-seq->string (crack encrypt-with-key))
 
-(count (byte-seq->string suffix-bytes))
+(count (a/byte-seq->string suffix-bytes))
 
 (defmacro let-dbg
   "Versão do Mauro Lopes <maurolopes@gmail.com>"
@@ -360,11 +312,11 @@
      encrypt-with-key
      )
 
-#_(encrypt-with-key (string->byte-seq "fera@nubank.com.br"))
+#_(encrypt-with-key (a/string->byte-seq "fera@nubank.com.br"))
 
 
-#_(find-prefix-size #(gen-cookie (byte-seq->string %)))
-#_(find-suffix-size #(gen-cookie (byte-seq->string %)))
+#_(find-prefix-size #(gen-cookie (a/byte-seq->string %)))
+#_(find-suffix-size #(gen-cookie (a/byte-seq->string %)))
 
 (defn find-prefix-size [fun]
   (let [block-size (find-block-size fun)]

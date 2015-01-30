@@ -1,5 +1,6 @@
 (ns matasano.scores
   (:require [clojure.string :as string]
+            [matasano.utils :refer :all]
             [matasano.adapters :as a]))
 
 
@@ -58,4 +59,11 @@
 (defn best-xor [byte-seq]
   (->> (range 256)
        (map #(a/encode-message [%] byte-seq))
+       (apply min-key score)))
+
+
+(defn best-xor-in-file [file]
+  (->> file
+       read-lines
+       (pmap (comp best-xor a/hex-string->byte-seq))
        (apply min-key score)))

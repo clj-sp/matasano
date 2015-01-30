@@ -53,3 +53,32 @@
 (defn encode-message [key byte-seq]
   (let [key-bytes (cycle (string->byte-seq key))]
     (map bit-xor key-bytes byte-seq)))
+
+;; From Marcelo's Branch
+
+(defn bytes->str [b]
+  (-> b
+      byte-array
+      String.))
+
+(defn str->bytes [s]
+  (-> s
+      .getBytes
+      byte-array))
+
+(defn b64->bytes [b64]
+  (-> b64
+      .getBytes
+      b64/decode))
+
+(defn hex->bytes [hex]
+  (->> hex
+       (re-seq #".{2}")
+       (map #(Integer/parseInt % 16))
+       byte-array))
+
+(defn bytes->hex [b]
+  (->> b
+       byte-array
+       (map #(format "%02x" %))
+       (apply str)))
