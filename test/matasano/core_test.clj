@@ -57,11 +57,11 @@
                          (apply str)
                          (a/hex-string->byte-seq))]
          (fact "on hamming distance"
-               (hamming-distance (a/string->byte-seq "this is a test") (a/string->byte-seq "wokka wokka!!!")) => 37)
+               (s/hamming-distance (a/string->byte-seq "this is a test") (a/string->byte-seq "wokka wokka!!!")) => 37)
          (fact "on guess-keysize"
-               (guess-keysize cipher 2 40) => 29)
+               (s/guess-keysize cipher 2 40) => 29)
          (fact "on challenge6"
-               (let [challenge6 (break-repeating-key-xor cipher)]
+               (let [challenge6 (s/break-repeating-key-xor cipher)]
                  (count challenge6) => 2871
                  (.startsWith challenge6 "I'm back and I'm ringin' the bell") => true
                  (.contains challenge6 "Supercalafragilisticexpialidocious") => true))))
@@ -69,7 +69,7 @@
 (facts "on challenge #7"
        (-> (apply str (read-lines "resources/challenge07"))
            a/b64->bytes
-           (decrypt-aes (a/str->bytes "YELLOW SUBMARINE"))
+           (decrypt-ecb (a/str->bytes "YELLOW SUBMARINE"))
            a/bytes->str)
        => #"^I'm back")
 
@@ -114,15 +114,15 @@
            (decrypt-cbc (a/str->bytes "YELLOW SUBMARINE") iv)
            a/bytes->str) => #"^I'm back"))
 
-#_(facts "on challenge #11"
+(facts "on challenge #11"
        (let [iv (byte-array (repeat block-size 0))]
          (fact "deterministic"
-               (encryption-oracle #(encrypt-aes % (gen-random-bytes 16))) => "EBC"
+               (encryption-oracle #(encrypt-ecb % (gen-random-bytes 16))) => "ECB"
                (encryption-oracle #(encrypt-cbc % (gen-random-bytes 16) iv)) => "CBC")
 
          (fact "mocking randomness"
-               (encryption-oracle rand-encrypt) => "EBC"
-               (provided (rand-nth anything) => encrypt-aes)
+               (encryption-oracle rand-encrypt) => "ECB"
+               (provided (rand-nth anything) => encrypt-ecb)
 
                (encryption-oracle rand-encrypt) => "CBC"
                (provided (rand-nth anything) => #(encrypt-cbc %1 %2 (gen-random-bytes 16))))))

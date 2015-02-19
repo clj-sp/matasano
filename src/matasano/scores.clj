@@ -35,8 +35,6 @@
    \space 0.1217
    \. 0.0657})
 
-
-
 (defn score [s]
   (if (seq s)
     (let [freq (-> (a/byte-seq->string s)
@@ -67,3 +65,28 @@
        read-lines
        (pmap (comp best-xor a/hex-string->byte-seq))
        (apply min-key score)))
+
+(defn hamming-distance [byte-seq1 byte-seq2]
+  (apply + (map #(Integer/bitCount (bit-xor %1 %2)) byte-seq1 byte-seq2)))
+
+
+(defn try-key [cipher keysize]
+  (let [cipher-seq (a/string->byte-seq cipher)
+        N 20]
+    (->> (message-blocks cipher-seq keysize)
+         (map #(-> (apply hamming-distance %) (/ keysize) float))
+         (take N)
+         average)))
+
+(defn guess-keysize [cipher min max]
+  (->> (range min (inc max))
+       (apply min-key (partial try-key cipher))))
+
+(defn break-repeating-key-xor [cipher]
+  (->> cipher
+       (partition (guess-keysize cipher 2 40))
+       transpose
+       (map best-xor)
+       transpose
+       (apply concat)
+       a/byte-seq->string))

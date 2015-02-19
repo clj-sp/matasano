@@ -9,91 +9,22 @@
             [clojure.string :as string]
             [clojure.java.io :refer :all]))
 
-(defn char-range [start end]
-  (map char (range (int start) (inc (int end)))))
 
-(def regular-ascii-codes
-  (set (map int (concat [\space \']
-                        (char-range \A \Z)
-                        (char-range \a \z)))))
-
-
-(defn best-xor-in-file [file]
-  (->> file
-       (read-lines)
-       (pmap (comp s/best-xor a/hex-string->byte-seq))
-       (apply min-key s/score)))
-
-(defn hamming-distance [byte-seq1 byte-seq2]
-  (apply + (map #(Integer/bitCount (bit-xor %1 %2)) byte-seq1 byte-seq2)))
-
-(defn average [coll]
-  (/ (reduce + coll)
-     (count coll)))
-
-(defn message-blocks [cipher keysize]
-  (->> cipher
-       (partition keysize)
-       (partition 2 1)))
-
-(defn try-key [cipher keysize]
-  (let [cipher-seq (a/string->byte-seq cipher)
-        N 20]
-    (->> (message-blocks cipher-seq keysize)
-         (map #(-> (apply hamming-distance %) (/ keysize) float))
-         (take N)
-         average)))
-
-(defn guess-keysize [cipher min max]
-  (->> (range min (inc max))
-       (apply min-key (partial try-key cipher))))
-
-(defn transpose [m]
-  (apply map vector m))
-
-(defn break-repeating-key-xor [cipher]
-  (->> cipher
-       (partition (guess-keysize cipher 2 40))
-       transpose
-       (map s/best-xor)
-       transpose
-       (apply concat)
-       a/byte-seq->string))
-
-(defn aes [mode message key]
+(defn aes-ecb [mode message key]
   (let [cipher (Cipher/getInstance "AES/ECB/NoPadding")
         key (SecretKeySpec. key "AES")]
     (.init cipher mode key)
     (-> cipher
         (.doFinal message))))
 
-(def encrypt-aes (partial aes Cipher/ENCRYPT_MODE))
-(def decrypt-aes (partial aes Cipher/DECRYPT_MODE))
-
-
-
-(defn find-first-duplicated [b-array block-size]
-  (let [num-blocks (/ (count b-array) block-size)]
-  (->>
-       b-array
-       (partition block-size)
-       (partition 2 1)
-       (take-while #(apply not= %))
-       count
-       (#(if (= % (dec num-blocks)) nil %)))))
-
-(find-first-duplicated (.getBytes "12349999aaaaaaaa5678") 4)
-(find-first-duplicated (.getBytes "12349999aabaaaaa5678") 4)
-
-
+(def encrypt-ecb (partial aes-ecb Cipher/ENCRYPT_MODE))
+(def decrypt-ecb (partial aes-ecb Cipher/DECRYPT_MODE))
 
 (defn encrypt-block-cbc [key previous-block block]
-  (encrypt-aes (a/array-xor block previous-block) key))
+  (encrypt-ecb (a/array-xor block previous-block) key))
 
 (defn decrypt-block-cbc [key previous-block block]
-  (a/array-xor (decrypt-aes block key) previous-block))
-
-(def block-size 16)
+  (a/array-xor (decrypt-ecb block key) previous-block))
 
 (defn encrypt-cbc [data key iv]
   (->> data
@@ -110,13 +41,10 @@
                           (decrypt-block-cbc key previous-block block))
                         (cons iv blocks) blocks))))
 
-(defn gen-random-bytes [len]
-  (byte-array (repeatedly len #(a/char->byte (rand-int 256)))))
-
 (defn rand-encrypt [data]
   (let [key (gen-random-bytes 16)
         iv (gen-random-bytes 16)
-        encrypt-fn (rand-nth [#(encrypt-cbc %1 %2 iv) encrypt-aes])
+        encrypt-fn (rand-nth [#(encrypt-cbc %1 %2 iv) encrypt-ecb])
         pref (gen-random-bytes (+ 5 (rand-int 6)))
         suff (gen-random-bytes (+ 5 (rand-int 6)))
         new-data (padding-pkcs7 16 (byte-array (concat pref data suff)))]
@@ -125,37 +53,15 @@
 (defn ebc-block-cipher-mode? []
   (unique? (rand-encrypt (byte-array (repeat 80 65))) 16))
 
-(defn encryption-oracle [encryption-fn]
-  (let [fixed-input (byte-array (repeat 80 65))
-        output (encryption-fn fixed-input)]
-    (if (unique? output block-size)
-      "CBC"
-      "EBC")))
-
-
-;; Challenge 12
-
-(defn encryption-oracle2 [block-size encryption-fn]
-  (let [fixed-input (byte-array (repeat (* 4 block-size) (int \A)))
-        output (encryption-fn fixed-input)]
-    (if (unique? output block-size)
-      "CBC"
-      "ECB")))
-
-(defn f [block-size message encrypt-fn]
-  )
-
 (def random-ecb-key (.getBytes "YELLOW SUBMARINE"))
 
 (def suffix-bytes
   (a/b64->bytes "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK"))
 
-#_(def suffix-bytes (a/b64->bytes "QUE="))
-
 (count suffix-bytes)
 
 (defn encrypt-with-key [message]
-  (encrypt-aes (padding-pkcs7 16 (byte-array (concat message suffix-bytes))) random-ecb-key))
+  (encrypt-ecb (padding-pkcs7 16 (byte-array (concat message suffix-bytes))) random-ecb-key))
 
 (defn find-block-size [fn]
   (let [max-block-size 1000]
@@ -168,8 +74,6 @@
 (count (encrypt-cbc (gen-random-bytes 17) random-ecb-key (gen-random-bytes 16)))
 
 (find-block-size #(encrypt-cbc % random-ecb-key (gen-random-bytes 16)))
-
-;(find-block-size #(gen-cookie (byte-seq->string %)))
 
 (defn crack [target-fn]
   (let [salt-size  (count (target-fn (.getBytes "")))
@@ -200,17 +104,6 @@
                            (conj guessed-salt found))))))
   )
 
-(a/byte-seq->string (crack encrypt-with-key))
-
-(count (a/byte-seq->string suffix-bytes))
-
-(defmacro let-dbg
-  "Versão do Mauro Lopes <maurolopes@gmail.com>"
-  [bindings & body]
-  `(do ~@(map #(cons 'def %)
-              (partition 2 bindings))
-       ~@body))
-
 (defn remove-padding [s]
   (seq s) #_  (drop-last (last s) s))
 
@@ -239,11 +132,6 @@
                     (recur (byte-array probe-message)
                            (conj guessed-salt found))))))
 
-;;guessed-size
-;;(byte-seq->string (y guessed-size encrypt-with-key))
-;;(byte-seq->string x)
-;; challenge 13
-
 
 (defn parse-query-string [s]
   (->> (string/split s #"&")
@@ -269,13 +157,8 @@
        (apply str))
   )
 
-(->> (profile-for "asdasd@kskks&&&&&&&&.com=====")
-     str(defn encryption-oracle2 [block-size encryption-fn]
-  (let [fixed-input (byte-array (repeat (* 4 block-size) (int \A)))
-        output (encryption-fn fixed-input)]
-    (if (unique? output block-size)
-      "CBC"
-      "ECB")))
+#_(->> (profile-for "asdasd@kskks&&&&&&&&.com=====")
+     str
      )
 
 
@@ -283,24 +166,22 @@
 (def random-key (.getBytes "sjfidhfkshwhmtsjd")) ;; juro que não vi
 
 (defn gen-cookie [email]
-  (encrypt-aes (->>
+  (encrypt-ecb (->>
                      (profile-for email)
                      str
                      .getBytes
                      (padding-pkcs7 16))
                     random-key))
 
-#_(->> (gen-cookie "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-      (partition 16)
-     frequencies
-     encrypt-with-key
-     )
-
-#_(encrypt-with-key (a/string->byte-seq "fera@nubank.com.br"))
-
-
-#_(find-prefix-size #(gen-cookie (a/byte-seq->string %)))
-#_(find-suffix-size #(gen-cookie (a/byte-seq->string %)))
+(defn find-first-duplicated [b-array block-size]
+  (let [num-blocks (/ (count b-array) block-size)]
+  (->>
+       b-array
+       (partition block-size)
+       (partition 2 1)
+       (take-while #(apply not= %))
+       count
+       (#(if (= % (dec num-blocks)) nil %)))))
 
 (defn find-prefix-size [fun]
   (let [block-size (find-block-size fun)]
@@ -327,6 +208,6 @@
 
 (count (concat probe-message guessed-salt))
 (nth cipher-list 82)
-;(encryption-oracle #(encrypt-aes % (gen-random-bytes 16)))
+;(encryption-oracle #(encrypt-ecb % (gen-random-bytes 16)))
 ;(encryption-oracle #(encrypt-cbc % (gen-random-bytes 16) iv))
 )
