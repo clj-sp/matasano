@@ -126,3 +126,6 @@
 
                (encryption-oracle rand-encrypt) => "CBC"
                (provided (rand-nth anything) => #(encrypt-cbc %1 %2 (gen-random-bytes 16))))))
+
+(facts "on challenge #12"
+       )

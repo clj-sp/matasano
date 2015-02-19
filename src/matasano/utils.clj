@@ -32,8 +32,6 @@
       "CBC"
       "ECB")))
 
-;; Challenge 12
-
 (defn encryption-oracle2 [block-size encryption-fn]
   (let [fixed-input (byte-array (repeat (* 4 block-size) (int \A)))
         output (encryption-fn fixed-input)]

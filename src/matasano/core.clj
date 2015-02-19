@@ -144,8 +144,6 @@
        (mapcat #(string/split % #"="))
        (apply hash-map)))
 
-
-
 (defn profile-for [email]
   {:email (string/replace email #"[&=]" "")
    :uid 10
@@ -156,12 +154,6 @@
        (interpose "&")
        (apply str))
   )
-
-#_(->> (profile-for "asdasd@kskks&&&&&&&&.com=====")
-     str
-     )
-
-
 
 (def random-key (.getBytes "sjfidhfkshwhmtsjd")) ;; juro que não vi
 
