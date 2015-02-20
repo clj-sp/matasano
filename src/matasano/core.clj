@@ -104,8 +104,8 @@
                            (conj guessed-salt found))))))
   )
 
-(defn remove-padding [s]
-  (seq s) #_  (drop-last (last s) s))
+(defn remove-padding-pkcs7 [s]
+  (byte-array (drop-last (int (last s)) s)))
 
 (defn y [guessed-size encrypt-with-key]
   (loop [message (byte-array (repeat guessed-size (int \A)))
@@ -155,15 +155,23 @@
        (apply str))
   )
 
-(def random-key (.getBytes "sjfidhfkshwhmtsjd")) ;; juro que não vi
+(def random-key (.getBytes "sjfidhfkshwhmtsj")) ;; juro que não vi
 
 (defn gen-cookie [email]
-  (encrypt-ecb (->>
-                     (profile-for email)
-                     str
-                     .getBytes
-                     (padding-pkcs7 16))
-                    random-key))
+  (encrypt-ecb (->> email
+                    profile-for
+                    to-query-string
+                    str
+                    .getBytes
+                    (padding-pkcs7 16))
+               random-key))
+
+(defn open-cookie [cookie]
+  (-> cookie
+      (decrypt-ecb random-key)
+      remove-padding-pkcs7
+      String.
+      parse-query-string))
 
 (defn find-first-duplicated [b-array block-size]
   (let [num-blocks (/ (count b-array) block-size)]
