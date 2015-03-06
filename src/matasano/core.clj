@@ -53,27 +53,28 @@
 (defn ebc-block-cipher-mode? []
   (unique? (rand-encrypt (byte-array (repeat 80 65))) 16))
 
-(def random-ecb-key (.getBytes "YELLOW SUBMARINE"))
-
-(def suffix-bytes
-  (a/b64->bytes "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK"))
-
-(count suffix-bytes)
-
-(defn encrypt-with-key [message]
-  (encrypt-ecb (padding-pkcs7 16 (byte-array (concat message suffix-bytes))) random-ecb-key))
-
 (defn find-block-size [fn]
   (let [max-block-size 1000]
     (->> (range 16 max-block-size)
          (filter #(= "ECB" (encryption-oracle2 % fn)))
          first)))
 
-(find-block-size encrypt-with-key)
+#_(find-block-size encrypt-with-key)
 
-(count (encrypt-cbc (gen-random-bytes 17) random-ecb-key (gen-random-bytes 16)))
+#_(count (encrypt-cbc (gen-random-bytes 17) random-ecb-key (gen-random-bytes 16)))
 
-(find-block-size #(encrypt-cbc % random-ecb-key (gen-random-bytes 16)))
+#_(find-block-size #(encrypt-cbc % random-ecb-key (gen-random-bytes 16)))
+
+#_(defn concat-byte-array [b1 b2]
+  (byte-array (concat b1 b2)))
+
+#_(defn ignore-prefix [target-fn]
+  (let [prefix-size (find-prefix-size target-fn)
+        block-size (find-block-size target-fn)
+        padding-size (- block-size (rem prefix-size block-size))]
+    #(->> (target-fn (concat-byte-array (byte-array padding-size) %))
+          (drop padding-size)
+          byte-array)))
 
 (defn crack [target-fn]
   (let [salt-size  (count (target-fn (.getBytes "")))
@@ -82,7 +83,6 @@
   (loop [message (byte-array (repeat guessed-size (int \A)))
          guessed-salt []]
     (let [probe-message (rest message)
-
           cipher (->> (target-fn probe-message)
                       (take guessed-size))
           cipher-list (->> (range 0 256)
@@ -132,14 +132,7 @@
                     (recur (byte-array probe-message)
                            (conj guessed-salt found))))))
 
-
 (defn parse-query-string [s]
-  (->> (string/split s #"&")
-       (map #(->> (string/split % #"=")
-                  (apply  hash-map)))
-       (apply merge)))
-
-(defn parse-query-string2 [s]
   (->> (string/split s #"&")
        (mapcat #(string/split % #"="))
        (apply hash-map)))
@@ -149,11 +142,8 @@
    :uid 10
    :role "user"})
 
-(defn to-query-string [x]
-  (->> (map (fn [[k v]] (str (name k) "=" v)) x)
-       (interpose "&")
-       (apply str))
-  )
+(defn to-query-string [{:strs [role email uid]}]
+  (format "email=%s&uid=%s&role=%s" email uid role))
 
 (def random-key (.getBytes "sjfidhfkshwhmtsj")) ;; juro que não vi
 
@@ -187,8 +177,8 @@
   (let [block-size (find-block-size fun)]
     (loop [i block-size]
       (let [message (byte-array (repeat i (int \A)))]
-        (if-let [♥ (find-first-duplicated (fun message) block-size)]
-          (- (* ♥ block-size) (rem i block-size))
+        (if-let [first-duplicated (find-first-duplicated (fun message) block-size)]
+          (- (* first-duplicated block-size) (rem i block-size))
           (recur (inc i)))))))
 
 
