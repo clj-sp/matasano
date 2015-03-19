@@ -131,4 +131,5 @@
        (let [suffix-bytes (a/b64->bytes "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK")
              random-ecb-key (.getBytes "YELLOW SUBMARINE")
              encrypt-with-key #(encrypt-ecb (padding-pkcs7 16 (byte-array (concat % suffix-bytes))) random-ecb-key)]
-         (a/bytes->str (crack encrypt-with-key)) => #"^Rollin' in my 5.0"))
+         (a/bytes->str #nu/tap (crack encrypt-with-key)) => #"^Rollin' in my 5.0"))
+

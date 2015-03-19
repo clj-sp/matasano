@@ -79,58 +79,35 @@
 (defn crack [target-fn]
   (let [salt-size  (count (target-fn (.getBytes "")))
         block-size (find-block-size target-fn)
-        guessed-size (+ salt-size (rem salt-size block-size))]
-  (loop [message (byte-array (repeat guessed-size (int \A)))
-         guessed-salt []]
-    (let [probe-message (rest message)
-          cipher (->> (target-fn probe-message)
-                      (take guessed-size))
-          cipher-list (->> (range 0 256)
-                           (map #(vector % (-> (vec probe-message)
-                                               (concat guessed-salt)
-                                               vec
-                                               (conj %)
-                                               byte-array
-                                               target-fn
-                                               (->> (take guessed-size))))))
-          [found _] (->> cipher-list
-                         (filter (fn [[c cipher-candidate]]
-                                   (= cipher-candidate cipher)))
-                         first)]
-
-
-      (if-not found (butlast (byte-array guessed-salt))
-                    (recur (byte-array probe-message)
-                           (conj guessed-salt found))))))
-  )
+        guessed-size (+ salt-size (rem salt-size block-size))
+        guess-fn (fn [probe-message-with-salt]
+                   (->> (for [i (range 256)]
+                          {(-> probe-message-with-salt
+                               (conj i)
+                               byte-array
+                               target-fn
+                               (->> (take guessed-size))) i})
+                        (apply merge)))]
+    (loop [message (vec (repeat guessed-size (int \A)))
+           guessed-salt []]
+      (if (= guessed-size (count guessed-salt))
+        guessed-salt
+        (let [probe-message (subvec message 1)
+              cipher (->> (target-fn probe-message)
+                          (take guessed-size))
+              probe-message-with-salt (into probe-message guessed-salt)
+              cipher-map (guess-fn probe-message-with-salt)
+              salt-char (cipher-map cipher)]
+          (if-not salt-char
+            (butlast guessed-salt)
+            (recur probe-message
+                   (conj guessed-salt salt-char))))))))
 
 (defn remove-padding-pkcs7 [s]
   (byte-array (drop-last (int (last s)) s)))
 
-(defn y [guessed-size encrypt-with-key]
-  (loop [message (byte-array (repeat guessed-size (int \A)))
-         guessed-salt []]
-    (let [probe-message (rest message)
-
-          cipher (->> (encrypt-with-key probe-message)
-                      (take guessed-size))
-          cipher-list (->> (range 0 256)
-                           (map #(vector % (-> (vec probe-message)
-                                               (concat guessed-salt)
-                                               vec
-                                               (conj %)
-                                               byte-array
-                                               encrypt-with-key
-                                               (->> (take guessed-size))))))
-          [found _] (->> cipher-list
-                         (filter (fn [[c cipher-candidate]]
-                                   (= cipher-candidate cipher)))
-                         first)]
 
 
-      (if-not found (butlast (byte-array guessed-salt))
-                    (recur (byte-array probe-message)
-                           (conj guessed-salt found))))))
 
 (defn parse-query-string [s]
   (->> (string/split s #"&")
