@@ -99,9 +99,25 @@
               cipher-map (guess-fn probe-message-with-salt)
               salt-char (cipher-map cipher)]
           (if-not salt-char
-            (butlast guessed-salt)
+            (butlast guessed-salt) ; it will only work for pkcs7.
             (recur probe-message
                    (conj guessed-salt salt-char))))))))
+
+(defn find-padding [target-fn]
+  (count (target-fn (.getBytes "")))
+
+  )
+
+
+(comment
+  (let [suffix-bytes (a/b64->bytes "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK")
+        random-ecb-key (.getBytes "YELLOW SUBMARINE")
+        encrypt-with-key #(encrypt-ecb (padding-pkcs7 16 (byte-array (concat % suffix-bytes))) random-ecb-key)]
+    ;(find-padding encrypt-with-key)
+    (a/bytes->str (crack encrypt-with-key))
+    )
+
+  )
 
 (defn remove-padding-pkcs7 [s]
   (byte-array (drop-last (int (last s)) s)))
@@ -119,7 +135,7 @@
    :uid 10
    :role "user"})
 
-(defn to-query-string [{:strs [role email uid]}]
+(defn to-query-string [{:keys [role email uid]}]
   (format "email=%s&uid=%s&role=%s" email uid role))
 
 (def random-key (.getBytes "sjfidhfkshwhmtsj")) ;; juro que não vi
@@ -142,8 +158,7 @@
 
 (defn find-first-duplicated [b-array block-size]
   (let [num-blocks (/ (count b-array) block-size)]
-  (->>
-       b-array
+  (->> b-array
        (partition block-size)
        (partition 2 1)
        (take-while #(apply not= %))

@@ -131,5 +131,14 @@
        (let [suffix-bytes (a/b64->bytes "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK")
              random-ecb-key (.getBytes "YELLOW SUBMARINE")
              encrypt-with-key #(encrypt-ecb (padding-pkcs7 16 (byte-array (concat % suffix-bytes))) random-ecb-key)]
-         (a/bytes->str #nu/tap (crack encrypt-with-key)) => #"^Rollin' in my 5.0"))
+         (a/bytes->str (crack encrypt-with-key)) => #"(?s)^Rollin' in my 5.0.*I just drove by\n$"))
+
+(facts "on challenge #13"
+  (fact "on finding the first duplicated block"
+        (find-first-duplicated (byte-array [1 1 2 2 5 6 3 3 3 3]) 2)  =>  3)
+
+  (fact ""
+        (find-prefix-size #(-> % a/bytes->str gen-cookie ) ) => 6)
+
+       )
 
